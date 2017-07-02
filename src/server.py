@@ -3,6 +3,16 @@ import socket  #pragma: no cover
 import sys  #pragma: no cover
 
 
+def response_error():
+    """Returns a HTTP error response."""
+    return(b'HTTP/1.1 500 Internal Server Error\r\n')
+
+
+def response_ok():
+    """ Returns a HTTP 200 response."""
+    return(b'HTTP/1.1 200 OK\r\n')
+
+
 def server():  #pragma: no cover
     """ waits for a connection and echos back the message"""
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
@@ -20,7 +30,9 @@ def server():  #pragma: no cover
                     message += part.decode('utf8')
                     if '\r\n\r\n' in message:
                         break
-                connection.sendall(message.encode('utf8'))
+                print(message)
+                echo = response_ok + message + '\r\n\r\n'
+                connection.sendall(echo.encode('utf8'))
                 connection.close()
                 break
             except KeyboardInterrupt:

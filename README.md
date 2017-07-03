@@ -23,5 +23,4 @@ response_ok
 returns a proper http 200 response
 
 response_error
-
-returns a proper http 500 resonse
+returns a several HTTP error response

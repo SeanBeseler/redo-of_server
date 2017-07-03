@@ -1,6 +1,32 @@
 from __future__ import unicode_literals  #pragma: no cover
 import socket  #pragma: no cover
 import sys  #pragma: no cover
+import os #paragma: no cover
+
+
+def file_open_close(path):
+    """open, read and clsoe the file"""
+    file_info = ''
+    req_file = ""
+    if '.jpg' in path or '.png' in path:
+        req_file = open(path, 'rb')
+        file_info = req_file.read()
+    else:
+        req_file = open(path, 'r')
+        file_info = req_file.read().encode('utf8')
+    req_file.close()
+    return file_info
+
+
+def resolve_uri(message):
+    """gets path to a file"""
+    path = message[message.index('/'):message.index('HTTP')]
+    path = path[:len(path) - 1]
+    path = os.getcwd() + path
+    real = os.path.lexists(path)
+    if real:
+        return path
+    return False
 
 
 def response_error(error):
@@ -15,15 +41,15 @@ def response_error(error):
         return('HTTP/1.1 405 Method Not Allowed\r\n')
 
 
-def response_ok():
+def response_ok(new_file=b''):
     """ Returns a HTTP 200 response."""
-    return('HTTP/1.1 200 OK\r\n')
+    return b'HTTP/1.1 200 OK\r\n\r\n' + new_file
 
 
 def parse_request(message): #pragma: no cover
     """Checks to see if the message is a proper HTTP request and return the response"""
     request = message.split()
-    if len(request) != 3 :
+    if len(request) != 3:
         return response_error(400)
     if request[0] != 'GET':
         return response_error(405)
@@ -51,12 +77,17 @@ def server():  #pragma: no cover
                         break
                 print(message)
                 good = parse_request(message)
-                echo = good + '\r\n'
-                connection.sendall(echo.encode('utf8'))
-                connection.close()
-                break
+                if b'200' in good:
+                    path = resolve_uri(message)
+                    connection.sendall(response_ok(file_open_close(path)))
+                    connection.close()
+                    break
+                else:
+                    echo = good + '\r\n'
+                    connection.sendall(echo.encode('utf8'))
+                    connection.close()
+                    break
             except KeyboardInterrupt:
-                server.shutdown(socket.SHUT_WR)
                 server.close()
                 sys.exit(0)
 
